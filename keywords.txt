@@ -1,0 +1,16 @@
+#######################################
+# Syntax Coloring For Transistor Talker
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+TransistorTalker               KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+trigger                        KEYWORD2
+configure                      KEYWORD2
