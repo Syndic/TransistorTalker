@@ -1,5 +1,48 @@
 #include "TransistorTalker.h"
 
+SdFileCollector::SdFileCollector(uint8_t pin) : pin(pin) {
+  if (!SD.begin(pin)) {
+    Serial.println(F("SD failed, or not present"));
+    while (1);  // don't do anything more
+  }
+  Serial.println("SD OK!");
+}
+
+uint16_t SdFileCollector::countFiles() {
+  return countFilesInDirectory(SD.open("/"));
+}
+
+uint16_t SdFileCollector::countFilesInDirectory(File dir) {
+  int count = 0;
+  File entry =  dir.openNextFile();
+  while(entry) {
+    if (entry.isDirectory()) { count += countFilesInDirectory(entry); }
+    else { count++; }
+
+    entry.close();
+    entry = dir.openNextFile();
+  }
+  return count;
+}
+
+void SdFileCollector::populateFilenameArray(String* array) {
+  uint16_t index = 0;
+  populateFilenameArray(array, SD.open("/"), index, String(""));
+}
+
+void SdFileCollector::populateFilenameArray(String* array, File dir, uint16_t& index, String path) {
+  File entry =  dir.openNextFile();
+  while(entry) {
+    if (entry.isDirectory()) {
+      populateFilenameArray(array, entry, index, String(path + entry.name() + "/"));
+    } else { array[index++] = String(path + entry.name()); }
+
+    entry.close();
+    entry =  dir.openNextFile();
+  }
+}
+
+
 TransistorTalker::TransistorTalker(
     uint32_t color,
     RadioshackStrip& leds,

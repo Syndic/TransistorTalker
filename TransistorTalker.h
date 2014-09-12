@@ -19,6 +19,17 @@ struct Pattern {
   Segment segments[];
 };
 
+class SdFileCollector {
+public:
+  SdFileCollector(uint8_t pin);
+  uint16_t countFiles();
+  void populateFilenameArray(String* array);
+private:
+  uint8_t pin;
+  uint16_t countFilesInDirectory(File dir);
+  void populateFilenameArray(String* array, File dir, uint16_t& index, String path);
+};
+
 class TransistorTalker {
 public:
   TransistorTalker(
