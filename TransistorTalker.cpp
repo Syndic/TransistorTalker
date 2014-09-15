@@ -5,7 +5,7 @@ SdFileCollector::SdFileCollector(uint8_t pin) : pin(pin) {
     Serial.println(F("SD failed, or not present"));
     while (1);  // don't do anything more
   }
-  Serial.println("SD OK!");
+  Serial.println(F("SD OK!"));
 }
 
 uint16_t SdFileCollector::countFiles() {
@@ -51,20 +51,21 @@ TransistorTalker::TransistorTalker(
     color(color),
     leds(leds),
     filePlayer(filePlayer),
-    patterns(Map<String, Pattern, patternMapCapacity>())
+    patterns(Map<String, _FLASH_TABLE<uint16_t>*, PATTERN_MAP_CAPACITY>())
 {}
 
 void TransistorTalker::configure(
-    Map<String, Pattern, patternMapCapacity>& allKnownPatterns,
+    Map<String, _FLASH_TABLE<uint16_t>*, PATTERN_MAP_CAPACITY>* allKnownPatterns,
     const uint16_t numberFilesFound,
     String filenamesFound[]) {
-  patterns = Map<String, Pattern, patternMapCapacity>();
+  patterns = Map<String, _FLASH_TABLE<uint16_t>*, PATTERN_MAP_CAPACITY>();
   
   for(int i=0; i<numberFilesFound; ++i) {
-    uint16_t index = allKnownPatterns.indexOf(filenamesFound[i]);
+    uint16_t index = allKnownPatterns->indexOf(filenamesFound[i]);
     if(index != -1) {
-      patterns[allKnownPatterns.keyAt(index)] = allKnownPatterns.valueAt(index);
+      patterns[allKnownPatterns->keyAt(index)] = allKnownPatterns->valueAt(index);
     }
+    else {Serial.println(filenamesFound[i] + String(" not in patterns."));}
   }
 }
 
@@ -76,33 +77,36 @@ void TransistorTalker::trigger() {
     return;
   }
   talking = true;
-  interrupts();
+  SREG = oldSREG; // restore interrupt register
   
   uint16_t selected = random(patterns.size());
   String filename = patterns.keyAt(selected);
-  Pattern pattern = patterns.valueAt(selected);
+  _FLASH_TABLE<uint16_t>* pattern = patterns.valueAt(selected);
   
-  uint8_t length = filename.length()+1;
-  char buffer[length];
-  filename.toCharArray(buffer, length);
-  
-  filePlayer.playFullFile(buffer);
-  playPattern(pattern);
-  
+  if(pattern) {
+    uint8_t length = filename.length()+1;
+    char buffer[length];
+    filename.toCharArray(buffer, length);
+
+    filePlayer.startPlayingFile(buffer);
+    playPattern(pattern);
+  }
   talking = false;
-  SREG = oldSREG; // restore interrupt register
 }
 
-void TransistorTalker::playPattern(Pattern& pattern) {
+void TransistorTalker::playPattern(_FLASH_TABLE<uint16_t>* pattern) {
+  if(pattern == NULL) { return; }
+  
   Serial.println("I'm outputting a pattern!");
   
-  for(int i = 0; i<pattern.segmentCount; ++i) {
-    leds.setBrightness(pattern.segments[i].brightness);
+  uint16_t rowCount = pattern->rows();
+  for(int i = 0; i<rowCount; ++i) {
+    leds.setBrightness((*pattern)[i][BRIGHTNESS_INDEX]);
     for (int i = 0; i<leds.numPixels(); ++i) {
       leds.setPixelColor(i, color);
     }
     leds.show();
     
-    delay(pattern.segments[i].msDuration);
+    delay((*pattern)[i][DURATION_INDEX]);
   }
 }

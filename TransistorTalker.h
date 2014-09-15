@@ -2,22 +2,17 @@
 #define TRANSISTOR_TALKER_H
 
 #include <Arduino.h>
-#include "../RadioshackStrip/Radioshack_Strip.h"
 #include "../Adafruit_VS1053_Library/Adafruit_VS1053.h"
 #include "../ArduinoMap/ArduinoMap.h"
+#include "../Flash/Flash.h"
+#include "../RadioshackStrip/Radioshack_Strip.h"
 #include <math.h>
 
-#define patternMapCapacity 30
+#define PATTERN_MAP_CAPACITY 50
 
-struct Segment {
-  uint8_t brightness;
-  uint16_t msDuration;
-};
-
-struct Pattern {
-  uint16_t segmentCount;
-  Segment segments[];
-};
+#define PATTERN_COLUMNS 2
+#define BRIGHTNESS_INDEX 0
+#define DURATION_INDEX 1
 
 class SdFileCollector {
 public:
@@ -38,7 +33,7 @@ public:
       Adafruit_VS1053_FilePlayer& filePlayer);
   virtual ~TransistorTalker() {}
   virtual void configure(
-      Map<String, Pattern, patternMapCapacity>& allKnownPatterns,
+      Map<String, _FLASH_TABLE<uint16_t>*, PATTERN_MAP_CAPACITY>* allKnownPatterns,
       const uint16_t numberFilesFound,
       String filenamesFound[]);
   virtual void trigger();
@@ -47,8 +42,8 @@ private:
   uint32_t color;
   RadioshackStrip& leds;
   Adafruit_VS1053_FilePlayer& filePlayer;
-  Map<String, Pattern, patternMapCapacity> patterns;
-  void playPattern(Pattern& pattern);
+  Map<String, _FLASH_TABLE<uint16_t>*, PATTERN_MAP_CAPACITY> patterns;
+  void playPattern(_FLASH_TABLE<uint16_t>* pattern);
 };
 
 #endif // TRANSISTOR_TALKER_H
